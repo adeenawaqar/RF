@@ -1,0 +1,56 @@
+import streamlit as st
+import joblib
+import numpy as np
+import os
+
+# Set page title
+st.set_page_config(page_title="Titanic Survival Predictor")
+
+st.title("🚢 Titanic Survival Prediction")
+st.write("This app uses a Random Forest model to predict if a passenger would survive the Titanic disaster.")
+
+# Define the model file name
+model_file = 'titanic_model.joblib'
+
+# Check if the model file exists on GitHub
+if os.path.exists(model_file):
+    try:
+        # Load the model using joblib
+        model = joblib.load(model_file)
+        
+        # Create Input Fields
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            p_class = st.selectbox("Ticket Class (1=1st, 2=2nd, 3=3rd)", [1, 2, 3])
+            gender = st.radio("Gender", ["male", "female"])
+            age = st.number_input("Age", min_value=1, max_value=100, value=25)
+            sib = st.number_input("Siblings/Spouses Aboard", min_value=0, value=0)
+
+        with col2:
+            par = st.number_input("Parents/Children Aboard", min_value=0, value=0)
+            fare = st.number_input("Fare Paid (Ticket Price)", min_value=0.0, value=32.0)
+            gate = st.selectbox("Port of Embarkation", ["S", "C", "Q"])
+
+        # Convert user inputs to numerical values for the model
+        g_val = 0 if gender == "male" else 1
+        port_map = {"S": 0, "C": 1, "Q": 2}
+        p_val = port_map[gate]
+
+        # Prediction Button
+        if st.button("Predict Survival"):
+            # Arrange inputs in the exact order used during training
+            user_input = np.array([[p_class, g_val, age, sib, par, fare, p_val]])
+            
+            prediction = model.predict(user_input)
+            
+            st.markdown("---")
+            if prediction[0] == 1:
+                st.success("### Result: This passenger would have **SURVIVED**! ✅")
+            else:
+                st.error("### Result: This passenger would **NOT** have survived. ❌")
+
+    except Exception as e:
+        st.error(f"Error loading the model: {e}")
+else:
+    st.error(f"Critical Error: '{model_file}' not found! Please ensure you have uploaded the model file to your GitHub repository.")
